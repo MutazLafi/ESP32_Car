@@ -11,14 +11,15 @@ Written in 2024
 #include <WebServer.h>
 #include "OV2640.h"
 #include "FS.h"
-#include <SD_MMC.h>
+#include "SD_MMC.h"
 #include <ESP32Servo.h>
+#include <EEPROM.h>
 
 // Camera Pins definitions
 
 #include "cameraPins.h"
 
-String RootMessege = "404 PageNotFound \n You are on Root Page Please Go to /Streaming For Camera Streaming";
+String RootMessege = "404 PageNotFound \n You are on Root Page Please Go to Streaming For Camera Streaming";
 
 
 const char Header[] = "HTTP/1.1 200 OK\r\n"
@@ -32,36 +33,55 @@ const int CntSize = strlen(ContentType);
 
 
 //definitions
-#define SSID "HPLAPTOP 9019"
-#define PWD "12345678"
+
+// Networks Saved
+#define SSID1 "HPLAPTOP 9019"
+#define PWD1 "12345678"
+
+#define SSID2 "HUAWEI"
+#define PWD2 "shifa600"
+
+#define SSID3 "Galaxy A52"
+#define PWD3 "nedallafi15"
 
 
 #define Flash_Pin 4
 #define SteeringServo_Pin 13
 #define RotatingServo_Pin 12
 
+#define EEPROM_SIZE 64
+
 //Variables
-struct MotorPins{
-   const byte IN1 = 3;
-   const byte IN2 = 4;
-   const byte IN3 = 5;
-   const byte IN4 = 6;
+
+
+/*struct MotorPinsStruct {
+  const byte IN1 = 2;
+  const byte IN2 = 14;
+  const byte IN3 = 15;
+  const byte IN4 = 16;
 };
+*/
 
 boolean WiFiConnectStatus = true;
 boolean FlashState = false;
 boolean ControlState = true;  // true for Car Control false for servo Control
 int FileNameCounter = 0;
+int RotatingServoAngleCounter = 0;
+int SteeringServoAngleCounter = 0;
+
+int EEPROM_Data;
 
 //definitions used to control the code
-#define DEBUG // define for serial messges
-#define CONTINUE_WITHOUT_SD // define to continue the code if there is no SD Card presented
+#define DEBUG                // define for serial messges
+#define CONTINUE_WITHOUT_SD  // define to continue the code if there is no SD Card presented
 //Objects
 WebServer server(80);
 OV2640 camera;
 
 Servo SteeringServo;
 Servo RotatingServo;
+
+
 
 #include "classes.h"
 
@@ -101,12 +121,53 @@ void setup() {
   config.jpeg_quality = 12;
   config.fb_count = 2;
 
-
-
+#if defined(CAMERA_MODEL_ESP_EYE)
+  pinMode(13, INPUT_PULLUP);
+  pinMode(14, INPUT_PULLUP);
+#endif
   camera.init(config);
+  EEPROM.begin(EEPROM_SIZE);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PWD);
+
+BeforeSwitch:
+
+  EEPROM.get(0, EEPROM_Data);
+  EEPROM_Data = 2;
+  switch (EEPROM_Data) {
+    case 1:
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(SSID1, PWD1);
+      Serial.println("Network 1 selected");
+      break;
+
+    case 2:
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(SSID2, PWD2);
+      Serial.println("Network 2 selected");
+      break;
+
+    case 3:
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(SSID3, PWD3);
+      Serial.println("Network 3 selected");
+      break;
+
+    default:
+      Serial.println("Error Network is not selected");
+      Serial.println(EEPROM_Data);
+      while (true) {
+        while (Serial.available()) {
+          int Read = Serial.parseInt();
+          EEPROM.put(0, Read);
+          EEPROM.commit();
+          Serial.println("Value Recieved: ");
+          Serial.println(Read);
+          goto BeforeSwitch;
+        }
+      }
+
+      break;
+  }
 
   while (WiFi.status() != WL_CONNECTED) {
     if (WiFiConnectStatus) {
@@ -121,7 +182,7 @@ void setup() {
   Serial.println("WiFi Connected");
 
   Serial.println("initializing SD Card....");
-  
+
   if (!SD_MMC.begin()) {
     Serial.println("Error With SD Card , Card Mount Faild");
 #ifndef CONTINUE_WITHOUT_SD
@@ -130,18 +191,8 @@ void setup() {
 #endif
     Serial.println("Continue Without SD Card");
   } else {
-    fs::FS &fs = SD_MMC;
+
     Serial.print("SD Card Started");
-    
-    
-    Serial.println("Creating Folder For The Car.....");
-    if (fs.mkdir("/ESP32CAR")) {
-
-      Serial.println("Created Folder For The car");
-    } else {
-
-      Serial.println("Faild To Create Folder");
-    }
   }
 
   Serial.print("ESP 32-CAM IP Address: ");
@@ -152,27 +203,31 @@ void setup() {
   Serial.println("/Streaming");
   Serial.println("Server Started");
 
+  CarMovment::initMotors();
+  CarMovment::initServos();
 
-  pinMode(4, OUTPUT);
   server.on("/", HTTP_GET, RequestHandlers::RootHandler);
   server.on("/Streaming", HTTP_GET, RequestHandlers::StreamingHandler);
   server.on("/Streaming/FLASH", HTTP_GET, RequestHandlers::FlashHandler);
-  /* 
-  server.on("/Streaming/F", HTTP_GET, ForwardHandler);
-  server.on("/Streaming/B", HTTP_GET, BackwardHandler);
-  server.on("/Streaming/R", HTTP_GET, RightHandler);
-  server.on("/Streaming/L", HTTP_GET, LeftHandler);
-  server.on("/Streaming/S", HTTP_GET, StopHandler);
-  */
+
+  server.on("/Streaming/F", HTTP_GET, RequestHandlers::ForwardHandler);
+
+  server.on("/Streaming/B", HTTP_GET, RequestHandlers::BackwardHandler);
+  server.on("/Streaming/R", HTTP_GET, RequestHandlers::RightHandler);
+  server.on("/Streaming/L", HTTP_GET, RequestHandlers::LeftHandler);
+  //server.on("/Streaming/S", HTTP_GET, StopHandler);
+
   server.on("/Streaming/SWITCH", HTTP_GET, RequestHandlers::SwitchHandler);
-  
+
   server.on("/Streaming/SaveIMG", HTTP_GET, RequestHandlers::SaveImageHandler);
 
   server.onNotFound(RequestHandlers::NotFoundHandler);
+
 
   server.begin();
 }
 
 void loop() {
+
   server.handleClient();
 }
