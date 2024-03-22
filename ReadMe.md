@@ -1,4 +1,4 @@
-<title>ESP32 Car By Mutaz Lafi</title>
+<h1>ESP32 Car By Mutaz Lafi</h1>
 <h2>Written in 2024</h2>
 
 <h3> About The Code And The Car</h3>
@@ -21,7 +21,7 @@ Saving pictures to SD Card Using The Built-in SD Card Slot
 <p>
 Parts needed:
 1 - AI Thinker ESP-32 CAM Board + FTDI Beakout or USB Devoplment Board (for Programming)
-2 - 4x DC Motor
+3 - 4x DC Motor
 3 - Wood Board
 4 - H - bridge 
 5 - Buck Converter set on 5 Volts
