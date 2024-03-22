@@ -13,7 +13,7 @@ Written in 2024
 #include "FS.h"
 #include "SD_MMC.h"
 #include <ESP32Servo.h>
-#include <EEPROM.h>
+
 
 // Camera Pins definitions
 
@@ -46,28 +46,32 @@ const int CntSize = strlen(ContentType);
 
 
 #define Flash_Pin 4
+#define StatusLed_Pin 33
+
 #define SteeringServo_Pin 13
 #define RotatingServo_Pin 12
 
-#define EEPROM_SIZE 64
+
+
 
 //Variables
 
 
-/*struct MotorPinsStruct {
+struct MotorPinsStruct {
   const byte IN1 = 2;
   const byte IN2 = 14;
   const byte IN3 = 15;
-  const byte IN4 = 16;
+  const byte IN4 = 3;
 };
-*/
+
+MotorPinsStruct MotorPins;
 
 boolean WiFiConnectStatus = true;
 boolean FlashState = false;
 boolean ControlState = true;  // true for Car Control false for servo Control
 int FileNameCounter = 0;
-int RotatingServoAngleCounter = 0;
-int SteeringServoAngleCounter = 0;
+int RotatingServoAngleCounter = 90;
+int SteeringServoAngleCounter = 90;
 
 int EEPROM_Data;
 
@@ -91,7 +95,10 @@ void setup() {
 #ifdef DEBUG
   Serial.begin(115200);
 #endif
+  CarMovment::initMotors();
+  CarMovment::Stop();
 
+  CarMovment::initServos();
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -121,18 +128,16 @@ void setup() {
   config.jpeg_quality = 12;
   config.fb_count = 2;
 
-#if defined(CAMERA_MODEL_ESP_EYE)
-  pinMode(13, INPUT_PULLUP);
-  pinMode(14, INPUT_PULLUP);
-#endif
+
   camera.init(config);
-  EEPROM.begin(EEPROM_SIZE);
+  pinMode(StatusLed_Pin, OUTPUT);
+
 
 
 BeforeSwitch:
 
-  EEPROM.get(0, EEPROM_Data);
-  EEPROM_Data = 2;
+
+  EEPROM_Data = 1;
   switch (EEPROM_Data) {
     case 1:
       WiFi.mode(WIFI_STA);
@@ -158,8 +163,8 @@ BeforeSwitch:
       while (true) {
         while (Serial.available()) {
           int Read = Serial.parseInt();
-          EEPROM.put(0, Read);
-          EEPROM.commit();
+
+
           Serial.println("Value Recieved: ");
           Serial.println(Read);
           goto BeforeSwitch;
@@ -176,14 +181,18 @@ BeforeSwitch:
       WiFiConnectStatus = !WiFiConnectStatus;
     }
     Serial.print(".");
-    delay(500);
+    digitalWrite(StatusLed_Pin, HIGH);
+    delay(250);
+    digitalWrite(StatusLed_Pin, LOW);
+    delay(250);
   }
+  digitalWrite(StatusLed_Pin, LOW);
 
   Serial.println("WiFi Connected");
 
   Serial.println("initializing SD Card....");
 
-  if (!SD_MMC.begin()) {
+  /* if (!SD_MMC.begin()) {
     Serial.println("Error With SD Card , Card Mount Faild");
 #ifndef CONTINUE_WITHOUT_SD
     while (true)
@@ -191,9 +200,12 @@ BeforeSwitch:
 #endif
     Serial.println("Continue Without SD Card");
   } else {
+    CarMovment::Stop();
 
     Serial.print("SD Card Started");
   }
+*/
+
 
   Serial.print("ESP 32-CAM IP Address: ");
   Serial.println(WiFi.localIP());
@@ -203,8 +215,6 @@ BeforeSwitch:
   Serial.println("/Streaming");
   Serial.println("Server Started");
 
-  CarMovment::initMotors();
-  CarMovment::initServos();
 
   server.on("/", HTTP_GET, RequestHandlers::RootHandler);
   server.on("/Streaming", HTTP_GET, RequestHandlers::StreamingHandler);
@@ -218,8 +228,12 @@ BeforeSwitch:
   //server.on("/Streaming/S", HTTP_GET, StopHandler);
 
   server.on("/Streaming/SWITCH", HTTP_GET, RequestHandlers::SwitchHandler);
+  server.on("/Streaming/RST", HTTP_GET, [] {
+    ESP.restart();
+  });
 
-  server.on("/Streaming/SaveIMG", HTTP_GET, RequestHandlers::SaveImageHandler);
+  // Can't Work Due To Pins Not Enough
+  //server.on("/Streaming/SaveIMG", HTTP_GET, RequestHandlers::SaveImageHandler);
 
   server.onNotFound(RequestHandlers::NotFoundHandler);
 
