@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32_CAR</title>
+</head>
+<body>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+ 
+    <iframe id = "webViewer" height="240" width="325"></iframe>
+    <br>
+
+    <input type = "text" id="TextBox" placeholder="Enter IP Address">
+    <button onclick="ChangeWebSiteGo()">go</button>
+     &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+     &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+     &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    <button onclick="ChangeWebSiteF()">Forward</button>
+    &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    <button onclick="ChangeWebSiteSWITCH()">SwitchControls</button>
+    <br>
+    <br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <button onclick="ChangeWebSiteL()">Left</button>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+
+    <button onclick="ChangeWebSiteR()">Right</button>
+    <br>
+    <br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <button onclick="ChangeWebSiteB()">BackWard</button>
+    
+    <br>
+    <br>
+    <br>
+    <br>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; 
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <button onclick="ChangeWebSiteReset()">Reset</button>
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    <button onclick="ChangeWebSiteFLASH()">Flash</button>
+
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    
+    <button onclick="ChangeWebSiteSaveIMG()">SaveIMG</button>
+    <script>
+        function ChangeWebSiteF(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/F';
+            webViewer.src = url;
+        }
+        
+        function ChangeWebSiteF(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/RST';
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteSaveIMG(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/SaveIMG';
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteB(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/B';
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteR(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/R';
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteL(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/L';
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteGo(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput;
+            webViewer.src = url;
+        }
+
+        function ChangeWebSiteSWITCH(){
+            const webViewer = document.getElementById('webViewer');
+            const userInput = document.getElementById('TextBox').value;
+            const url = userInput.startsWith('http') ? userInput : 'http://' + userInput + '/SWITCH';
+            webViewer.src = url;
+        }
+    </script>
+
+</body>
+</html>
