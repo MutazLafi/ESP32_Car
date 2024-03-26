@@ -13,6 +13,7 @@ Written in 2024
 #include "FS.h"
 #include "SD_MMC.h"
 #include <ESP32Servo.h>
+#include <EEPROM.h>
 
 
 // Camera Pins definitions
@@ -52,6 +53,8 @@ const int CntSize = strlen(ContentType);
 #define RotatingServo_Pin 12
 
 
+#define EEPROM_Size 64  // The Maximum Size Used or Higher in bytes
+
 
 
 //Variables
@@ -70,14 +73,20 @@ boolean WiFiConnectStatus = true;
 boolean FlashState = false;
 boolean ControlState = true;  // true for Car Control false for servo Control
 int FileNameCounter = 0;
-int RotatingServoAngleCounter = 90;
-int SteeringServoAngleCounter = 90;
+int DefaultRotatingServoAngle = 80;
+int DefaultSteeringServoAngle = 90;
+int RotatingServoAngleCounter;
+int SteeringServoAngleCounter;
 
-int EEPROM_Data;
+int Speed = 125;
+int DirectionTime = 1000;  // Time in milliseconds for how many time the car will keep going right or left
+
 
 //definitions used to control the code
 #define DEBUG                // define for serial messges
-#define CONTINUE_WITHOUT_SD  // define to continue the code if there is no SD Card presented
+//#define ConstSpeed  120  //from 0 to 255 define for contant speed
+#define DirectionSpeed 255 
+
 //Objects
 WebServer server(80);
 OV2640 camera;
@@ -90,15 +99,15 @@ Servo RotatingServo;
 #include "classes.h"
 
 void setup() {
-
-
-#ifdef DEBUG
-  Serial.begin(115200);
-#endif
   CarMovment::initMotors();
   CarMovment::Stop();
 
   CarMovment::initServos();
+
+#ifdef DEBUG
+  Serial.begin(115200);
+#endif
+
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -130,46 +139,87 @@ void setup() {
 
 
   camera.init(config);
+  EEPROM.begin(EEPROM_Size);
   pinMode(StatusLed_Pin, OUTPUT);
 
+  Serial.println("Choosing Network....");
+  while (millis() < 1000) {
+    while (Serial.available() > 0) {
+      char Read = Serial.read();
+      Serial.println("Choosing New Network...");
+      if (Read == 'A') {
+        EEPROM.write(0, 1);
+        EEPROM.commit();
+        goto ChoosingNetwork;
+      }
+
+      if (Read == 'B') {
+        EEPROM.write(0, 2);
+        EEPROM.commit();
+        goto ChoosingNetwork;
+      }
+
+      if (Read == 'C') {
+        EEPROM.write(0, 3);
+        EEPROM.commit();
+        goto ChoosingNetwork;
+      }
+    }
+  }
 
 
-BeforeSwitch:
+ChoosingNetwork:
+  byte EEPROM_Data;
 
-
-  EEPROM_Data = 1;
+  EEPROM_Data = EEPROM.read(0);
+  Serial.println(EEPROM_Data);
   switch (EEPROM_Data) {
     case 1:
       WiFi.mode(WIFI_STA);
       WiFi.begin(SSID1, PWD1);
-      Serial.println("Network 1 selected");
+      Serial.println("Network A selected");
       break;
 
     case 2:
       WiFi.mode(WIFI_STA);
       WiFi.begin(SSID2, PWD2);
-      Serial.println("Network 2 selected");
+      Serial.println("Network B selected");
       break;
 
     case 3:
       WiFi.mode(WIFI_STA);
       WiFi.begin(SSID3, PWD3);
-      Serial.println("Network 3 selected");
+      Serial.println("Network C selected");
       break;
 
     default:
       Serial.println("Error Network is not selected");
-      Serial.println(EEPROM_Data);
-      while (true) {
-        while (Serial.available()) {
-          int Read = Serial.parseInt();
+      Serial.println("Please Choose A Network");
+      Serial.println("A - HPLAPTOP 9019");
+      Serial.println("B - HUAWEI");
+      Serial.println("C - Galaxy A52");
+      while (Serial.available() > 0) {
+        char Read = Serial.read();
+        Serial.println("Choosing New Network...");
+        if (Read == 'A') {
+          EEPROM.write(0, 1);
+          EEPROM.commit();
+          goto ChoosingNetwork;
+        }
 
+        if (Read == 'B') {
+          EEPROM.write(0, 2);
+          EEPROM.commit();
+          goto ChoosingNetwork;
+        }
 
-          Serial.println("Value Recieved: ");
-          Serial.println(Read);
-          goto BeforeSwitch;
+        if (Read == 'C') {
+          EEPROM.write(0, 3);
+          EEPROM.commit();
+          goto ChoosingNetwork;
         }
       }
+
 
       break;
   }
@@ -190,21 +240,9 @@ BeforeSwitch:
 
   Serial.println("WiFi Connected");
 
-  Serial.println("initializing SD Card....");
 
-  /* if (!SD_MMC.begin()) {
-    Serial.println("Error With SD Card , Card Mount Faild");
-#ifndef CONTINUE_WITHOUT_SD
-    while (true)
-      ;
-#endif
-    Serial.println("Continue Without SD Card");
-  } else {
-    CarMovment::Stop();
+  // You can put here SD Card Initialization ( Not used in My code Due To Not Having Enough Pins)
 
-    Serial.print("SD Card Started");
-  }
-*/
 
 
   Serial.print("ESP 32-CAM IP Address: ");
@@ -225,12 +263,17 @@ BeforeSwitch:
   server.on("/Streaming/B", HTTP_GET, RequestHandlers::BackwardHandler);
   server.on("/Streaming/R", HTTP_GET, RequestHandlers::RightHandler);
   server.on("/Streaming/L", HTTP_GET, RequestHandlers::LeftHandler);
-  //server.on("/Streaming/S", HTTP_GET, StopHandler);
+  server.on("/Streaming/S", HTTP_GET, RequestHandlers::StopHandler);
 
-  server.on("/Streaming/SWITCH", HTTP_GET, RequestHandlers::SwitchHandler);
+
+
+  
+ 
   server.on("/Streaming/RST", HTTP_GET, [] {
     ESP.restart();
   });
+
+  server.on("/Streaming/SpeedData/", HTTP_GET, RequestHandlers::SpeedDataHandler);
 
   // Can't Work Due To Pins Not Enough
   //server.on("/Streaming/SaveIMG", HTTP_GET, RequestHandlers::SaveImageHandler);
@@ -244,4 +287,5 @@ BeforeSwitch:
 void loop() {
 
   server.handleClient();
+  delay(2);
 }

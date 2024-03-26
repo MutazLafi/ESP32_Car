@@ -7,6 +7,8 @@ public:
     pinMode(MotorPins.IN2, OUTPUT);
     pinMode(MotorPins.IN3, OUTPUT);
     pinMode(MotorPins.IN4, OUTPUT);
+    pinMode(1, OUTPUT);
+
     Stop();
   }
 
@@ -14,8 +16,10 @@ public:
     SteeringServo.attach(SteeringServo_Pin);
     RotatingServo.attach(RotatingServo_Pin);
 
-    SteeringServo.write(90);
-    RotatingServo.write(90);
+    SteeringServo.write(DefaultSteeringServoAngle);
+    RotatingServo.write(DefaultRotatingServoAngle);
+    SteeringServoAngleCounter = DefaultSteeringServoAngle;
+    RotatingServoAngleCounter = DefaultRotatingServoAngle;
   }
 
   static void Forward() {
@@ -34,16 +38,16 @@ public:
 
   static void Right() {
     digitalWrite(MotorPins.IN1, LOW);
-    digitalWrite(MotorPins.IN2, HIGH);
+    digitalWrite(MotorPins.IN2, LOW);
     digitalWrite(MotorPins.IN3, HIGH);
     digitalWrite(MotorPins.IN4, LOW);
   }
 
   static void Left() {
-    digitalWrite(MotorPins.IN1, LOW);
-    digitalWrite(MotorPins.IN2, HIGH);
+    digitalWrite(MotorPins.IN1, HIGH);
+    digitalWrite(MotorPins.IN2, LOW);
     digitalWrite(MotorPins.IN3, LOW);
-    digitalWrite(MotorPins.IN4, HIGH);
+    digitalWrite(MotorPins.IN4, LOW);
   }
 
   static void Stop() {
@@ -66,26 +70,39 @@ public:
   }
 
   static void StreamingHandler(void) {
+    server.handleClient();
 
+    WiFiClient client;
+    server.handleClient();
+    client = server.client();
+    server.handleClient();
 
-    WiFiClient client = server.client();
-
-    char buf[32];
+    char buf[64];
     int FrameSize;
-
+    server.handleClient();
     client.write(Header, HdrSize);
+    server.handleClient();
     client.write(Boundry, BdrSize);
+    server.handleClient();
 
     while (true) {
+      server.handleClient();
       if (!client.connected()) break;
       server.handleClient();
       camera.run();
+      server.handleClient();
       FrameSize = camera.getSize();
+      server.handleClient();
       client.write(ContentType, CntSize);
+      server.handleClient();
       sprintf(buf, "%d\r\n\r\n", FrameSize);
+      server.handleClient();
       client.write(buf, strlen(buf));
+      server.handleClient();
       client.write((char *)camera.getfb(), FrameSize);
+      server.handleClient();
       client.write(Boundry);
+      server.handleClient();
     }
   }
 
@@ -96,7 +113,78 @@ public:
     StreamingHandler();
   }
 
-  static void SaveImageHandler() {  // Not Used in Server "on" Function as a handler due to not having enough pins
+
+
+
+  static void ForwardHandler(void) {
+    CarMovment::initMotors();
+    analogWrite(1, Speed);
+    CarMovment::Forward();
+
+    StreamingHandler();
+  }
+
+  static void BackwardHandler() {
+    CarMovment::initMotors();
+    analogWrite(1, Speed);
+    CarMovment::Backward();
+
+
+
+    StreamingHandler();
+  }
+
+  static void RightHandler(void) {
+    CarMovment::initMotors();
+    analogWrite(1, DirectionSpeed);
+    CarMovment::Right();
+    delay(DirectionTime);
+    CarMovment::Stop();
+
+    StreamingHandler();
+  }
+
+  static void LeftHandler(void) {
+    CarMovment::initMotors();
+    analogWrite(1, DirectionSpeed);
+    CarMovment::Left();
+    delay(DirectionTime);
+    CarMovment::Stop();
+
+    StreamingHandler();
+  }
+
+  static void StopHandler(void) {
+    CarMovment::initMotors();
+    CarMovment::Stop();
+    StreamingHandler();
+  }
+
+  static void SpeedDataHandler(void) {
+#ifndef ConstSpeed
+    String SpeedString = server.arg("Speed");
+    int SpeedInt = SpeedString.toInt();
+    Speed = SpeedInt;
+#endif
+
+    String SteeringString = server.arg("Steering");
+    RotatingServo.write(SteeringString.toInt());
+
+
+
+    String RotatingString = server.arg("Rotating");
+    SteeringServo.write(RotatingString.toInt());
+
+    String DelayTimeString = server.arg("Delay");
+    int Time = DelayTimeString.toInt();
+    DirectionTime = (1000 * Time);
+
+    StreamingHandler();
+  }
+
+
+  /*static void SaveImage() {  // Not Used in Server "on" Function as a handler due to not having enough pins
+
     fs::FS &fs = SD_MMC;
     char buf[32];
     int s;
@@ -119,72 +207,5 @@ public:
 
     file.close();
     StreamingHandler();
-  }
-
-  static void SwitchHandler(void) {
-    ControlState = !ControlState;
-    StreamingHandler();
-  }
-
-  static void ForwardHandler(void) {
-    CarMovment::initMotors();
-    if (!ControlState) {
-      CarMovment::Forward();
-    } else {
-      RotatingServoAngleCounter += 20;
-      if (RotatingServoAngleCounter > 180) {
-        RotatingServoAngleCounter = 180;
-      }
-      RotatingServo.write(RotatingServoAngleCounter);
-    }
-    StreamingHandler();
-  }
-
-  static void BackwardHandler() {
-
-    if (!ControlState) {
-
-
-    CarMovment::Stop();
-    delay(20);
-    CarMovment::Backward();
-   
-  
-    } else {
-      RotatingServoAngleCounter -= 20;
-      if (RotatingServoAngleCounter < 0) {
-        RotatingServoAngleCounter = 0;
-      }
-      RotatingServo.write(RotatingServoAngleCounter);
-    }
-    StreamingHandler();
-  }
-
-  static void RightHandler(void) {
-    CarMovment::Stop();
-    if (!ControlState) {
-      CarMovment::Right();
-    } else {
-      SteeringServoAngleCounter += 20;
-      if (SteeringServoAngleCounter > 180) {
-        SteeringServoAngleCounter = 180;
-      }
-      SteeringServo.write(SteeringServoAngleCounter);
-    }
-    StreamingHandler();
-  }
-
-  static void LeftHandler(void) {
-    CarMovment::Stop();
-    if (!ControlState) {
-      CarMovment::Left();
-    } else {
-      SteeringServoAngleCounter -= 20;
-      if (SteeringServoAngleCounter < 0) {
-        SteeringServoAngleCounter = 0;
-      }
-      SteeringServo.write(SteeringServoAngleCounter);
-    }
-    StreamingHandler();
-  }
+  }*/
 };
