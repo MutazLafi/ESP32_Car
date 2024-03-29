@@ -14,7 +14,6 @@ Things We Can control In The Robot in the webserver :
 Movment of The Car (Right , Left ,Forward and back)
 Position of the camera
 Flash Light
-Saving pictures to SD Card Using The Built-in SD Card Slot
 </p>
 
 <h3> Parts needed</h3>
