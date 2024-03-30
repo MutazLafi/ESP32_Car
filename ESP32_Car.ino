@@ -10,8 +10,8 @@ Written in 2024
 #include <WiFiclient.h>
 #include <WebServer.h>
 #include "OV2640.h"
-#include "FS.h"
-#include "SD_MMC.h"
+//#include "FS.h"  
+//#include "SD_MMC.h"
 #include <ESP32Servo.h>
 #include <EEPROM.h>
 
@@ -20,14 +20,16 @@ Written in 2024
 
 #include "cameraPins.h"
 
-String RootMessege = "404 PageNotFound \n You are on Root Page Please Go to Streaming For Camera Streaming";
+String RootMessege = "404 PageNotFound \n You are on Root Page Please Go to /Streaming For Camera Streaming";
 
 
 const char Header[] = "HTTP/1.1 200 OK\r\n"
                       "Access-Control-Allow-Origin: *\r\n"
                       "Content-Type: multipart/x-mixed-replace; boundary=123456789781000000000987654321\r\n";
+
 const char Boundry[] = "\r\n--123456789781000000000987654321\r\n";
 const char ContentType[] = "Content-Type: image/jpeg\r\nContent-Length: ";
+
 const int HdrSize = strlen(Header);
 const int BdrSize = strlen(Boundry);
 const int CntSize = strlen(ContentType);
@@ -52,6 +54,7 @@ const int CntSize = strlen(ContentType);
 #define SteeringServo_Pin 13
 #define RotatingServo_Pin 12
 
+#define SpeedSet_Pin 1
 
 #define EEPROM_Size 64  // The Maximum Size Used or Higher in bytes
 
@@ -71,21 +74,22 @@ MotorPinsStruct MotorPins;
 
 boolean WiFiConnectStatus = true;
 boolean FlashState = false;
-boolean ControlState = true;  // true for Car Control false for servo Control
-int FileNameCounter = 0;
+
 int DefaultRotatingServoAngle = 80;
 int DefaultSteeringServoAngle = 90;
+
 int RotatingServoAngleCounter;
 int SteeringServoAngleCounter;
 
 int Speed = 125;
-int DirectionTime = 1000;  // Time in milliseconds for how many time the car will keep going right or left
+// Note : This is the Default Time and it change with app control
+float DirectionTime = 1000;  // Time in milliseconds for how many time the car will keep going right or left
 
 
 //definitions used to control the code
 #define DEBUG                // define for serial messges
 //#define ConstSpeed  120  //from 0 to 255 define for contant speed
-#define DirectionSpeed 255 
+#define DirectionSpeed 255 // Speed used in Right/Left 
 
 //Objects
 WebServer server(80);
@@ -95,11 +99,11 @@ Servo SteeringServo;
 Servo RotatingServo;
 
 
-
+// File that have All classes and functions in it
 #include "classes.h"
 
 void setup() {
-  CarMovment::initMotors();
+  CarMovment::initMotors();  
   CarMovment::Stop();
 
   CarMovment::initServos();
@@ -108,8 +112,8 @@ void setup() {
   Serial.begin(115200);
 #endif
 
-
-  camera_config_t config;
+  // Camera Pins
+  camera_config_t config; 
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
@@ -141,7 +145,8 @@ void setup() {
   camera.init(config);
   EEPROM.begin(EEPROM_Size);
   pinMode(StatusLed_Pin, OUTPUT);
-
+  
+  // Changing Network operation
   Serial.println("Choosing Network....");
   while (millis() < 1000) {
     while (Serial.available() > 0) {
@@ -224,7 +229,7 @@ ChoosingNetwork:
       break;
   }
 
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {  // Checking Wifi Status
     if (WiFiConnectStatus) {
       Serial.println("Can't connect To WiFi");
       Serial.print("Trying to Reconnect");
@@ -287,5 +292,5 @@ ChoosingNetwork:
 void loop() {
 
   server.handleClient();
-  delay(2);
+  delay(2);  // for stability
 }

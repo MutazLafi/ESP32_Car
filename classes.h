@@ -7,7 +7,7 @@ public:
     pinMode(MotorPins.IN2, OUTPUT);
     pinMode(MotorPins.IN3, OUTPUT);
     pinMode(MotorPins.IN4, OUTPUT);
-    pinMode(1, OUTPUT);
+    pinMode(SpeedSet_Pin, OUTPUT);
 
     Stop();
   }
@@ -118,7 +118,7 @@ public:
 
   static void ForwardHandler(void) {
     CarMovment::initMotors();
-    analogWrite(1, Speed);
+    analogWrite(SpeedSet_Pin, Speed);
     CarMovment::Forward();
 
     StreamingHandler();
@@ -126,7 +126,7 @@ public:
 
   static void BackwardHandler() {
     CarMovment::initMotors();
-    analogWrite(1, Speed);
+    analogWrite(SpeedSet_Pin, Speed);
     CarMovment::Backward();
 
 
@@ -136,20 +136,20 @@ public:
 
   static void RightHandler(void) {
     CarMovment::initMotors();
-    analogWrite(1, DirectionSpeed);
+    analogWrite(SpeedSet_Pin, DirectionSpeed);
     CarMovment::Right();
     delay(DirectionTime);
-    CarMovment::Stop();
+    CarMovment::initMotors();
 
     StreamingHandler();
   }
 
   static void LeftHandler(void) {
     CarMovment::initMotors();
-    analogWrite(1, DirectionSpeed);
+    analogWrite(SpeedSet_Pin, DirectionSpeed);
     CarMovment::Left();
     delay(DirectionTime);
-    CarMovment::Stop();
+    CarMovment::initMotors();
 
     StreamingHandler();
   }
@@ -161,22 +161,21 @@ public:
   }
 
   static void SpeedDataHandler(void) {
-#ifndef ConstSpeed
     String SpeedString = server.arg("Speed");
     int SpeedInt = SpeedString.toInt();
     Speed = SpeedInt;
-#endif
+
 
     String SteeringString = server.arg("Steering");
-    RotatingServo.write(SteeringString.toInt());
+    SteeringServo.write(SteeringString.toInt());
 
 
 
     String RotatingString = server.arg("Rotating");
-    SteeringServo.write(RotatingString.toInt());
+    RotatingServo.write(RotatingString.toInt());
 
     String DelayTimeString = server.arg("Delay");
-    int Time = DelayTimeString.toInt();
+    float Time = DelayTimeString.toFloat();
     DirectionTime = (1000 * Time);
 
     StreamingHandler();
