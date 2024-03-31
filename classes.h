@@ -181,6 +181,29 @@ public:
     StreamingHandler();
   }
 
+  static void NetworkChangeHandler(void) {
+    String NumberString = server.arg("Network");
+
+    int Number = NumberString.toInt();
+
+    switch (Number) {
+      case 1:
+        EEPROM.write(0, 1);
+        EEPROM.commit();
+        ESP.restart();
+
+      case 2:
+        EEPROM.write(0, 2);
+        EEPROM.commit();
+        ESP.restart();
+
+      case 3:
+        EEPROM.write(0, 3);
+        EEPROM.commit();
+        ESP.restart();
+    }
+  }
+
 
   /*static void SaveImage() {  // Not Used in Server "on" Function as a handler due to not having enough pins
 

@@ -278,7 +278,8 @@ ChoosingNetwork:
     ESP.restart();
   });
 
-  server.on("/Streaming/SpeedData/", HTTP_GET, RequestHandlers::SpeedDataHandler);
+  server.on("/Streaming/Data/", HTTP_GET, RequestHandlers::SpeedDataHandler);
+  server.on("/Streaming/NetworkChange/", HTTP_GET, RequestHandlers::NetworkChangeHandler);
 
   // Can't Work Due To Pins Not Enough
   //server.on("/Streaming/SaveIMG", HTTP_GET, RequestHandlers::SaveImageHandler);
