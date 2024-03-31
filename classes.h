@@ -201,6 +201,11 @@ public:
         EEPROM.write(0, 3);
         EEPROM.commit();
         ESP.restart();
+
+      case 3:
+        EEPROM.write(0, 4);
+        EEPROM.commit();
+        ESP.restart();
     }
   }
 
