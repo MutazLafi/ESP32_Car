@@ -10,7 +10,7 @@ Written in 2024
 #include <WiFiclient.h>
 #include <WebServer.h>
 #include "OV2640.h"
-//#include "FS.h"  
+//#include "FS.h"
 //#include "SD_MMC.h"
 #include <ESP32Servo.h>
 #include <EEPROM.h>
@@ -46,6 +46,9 @@ const int CntSize = strlen(ContentType);
 
 #define SSID3 "Galaxy A52"
 #define PWD3 "nedallafi15"
+
+#define SSID4 "Tab 13"
+#define PWD4 "lafi1234"
 
 
 #define Flash_Pin 4
@@ -87,9 +90,9 @@ float DirectionTime = 1000;  // Time in milliseconds for how many time the car w
 
 
 //definitions used to control the code
-#define DEBUG                // define for serial messges
+#define DEBUG  // define for serial messges
 //#define ConstSpeed  120  //from 0 to 255 define for contant speed
-#define DirectionSpeed 255 // Speed used in Right/Left 
+#define DirectionSpeed 255  // Speed used in Right/Left
 
 //Objects
 WebServer server(80);
@@ -103,7 +106,7 @@ Servo RotatingServo;
 #include "classes.h"
 
 void setup() {
-  CarMovment::initMotors();  
+  CarMovment::initMotors();
   CarMovment::Stop();
 
   CarMovment::initServos();
@@ -113,7 +116,7 @@ void setup() {
 #endif
 
   // Camera Pins
-  camera_config_t config; 
+  camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
@@ -145,7 +148,7 @@ void setup() {
   camera.init(config);
   EEPROM.begin(EEPROM_Size);
   pinMode(StatusLed_Pin, OUTPUT);
-  
+
   // Changing Network operation
   Serial.println("Choosing Network....");
   while (millis() < 1000) {
@@ -166,6 +169,12 @@ void setup() {
 
       if (Read == 'C') {
         EEPROM.write(0, 3);
+        EEPROM.commit();
+        goto ChoosingNetwork;
+      }
+
+      if (Read == 'D') {
+        EEPROM.write(0, 4);
         EEPROM.commit();
         goto ChoosingNetwork;
       }
@@ -197,12 +206,19 @@ ChoosingNetwork:
       Serial.println("Network C selected");
       break;
 
+    case 4:
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(SSID4, PWD4);
+      Serial.println("Network D selected");
+      break;
+
     default:
       Serial.println("Error Network is not selected");
       Serial.println("Please Choose A Network");
       Serial.println("A - HPLAPTOP 9019");
       Serial.println("B - HUAWEI");
       Serial.println("C - Galaxy A52");
+      Serial.println("D - Tab 13");
       while (Serial.available() > 0) {
         char Read = Serial.read();
         Serial.println("Choosing New Network...");
@@ -272,8 +288,8 @@ ChoosingNetwork:
 
 
 
-  
- 
+
+
   server.on("/Streaming/RST", HTTP_GET, [] {
     ESP.restart();
   });
